@@ -3,7 +3,7 @@ use std::string::{String};
 use std::time::{Duration, Instant};
 use std::thread::{self, sleep};
 
-static CAP : usize = 1024 * 1024;
+static READ_BUF_SIZE : usize = 1024 * 1024;
 static UPDATE_INTERVAL_MS : u64 = 500;
 
 static mut NUM_LINES : u64 = 0;
@@ -12,7 +12,7 @@ static mut NUM_BYTES : u64 = 0;
 fn main() {
     let stdin = stdin();
     let stdout = io::stdout();
-    let mut reader = BufReader::with_capacity(CAP, stdin.lock());
+    let mut reader = BufReader::with_capacity(READ_BUF_SIZE, stdin.lock());
     let mut writer = BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 

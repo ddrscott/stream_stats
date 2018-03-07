@@ -1,0 +1,6 @@
+[package]
+name = "stream_stats"
+version = "0.1.0"
+authors = ["Scott Pierce <ddrscott@gmail.com>"]
+
+[dependencies]

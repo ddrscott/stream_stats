@@ -1,3 +1,4 @@
+use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, BufWriter, stdin, Write};
 use std::string::{String};
 use std::time::{Duration, Instant};
@@ -6,9 +7,17 @@ use std::thread::{self, sleep};
 static READ_BUF_SIZE : usize = 1024 * 1024;
 static UPDATE_INTERVAL_MS : u64 = 500;
 
+// Using globals for performance reasons.
+// We know we're updating in the `while` loop and the thread is occationally
+// rendering info back to terminal.
+//
+// Adding atomic updates or mutex is too much
+// overhead for a comparitively small amount of concurrent access against these
+// variables.
 static mut NUM_LINES : u64 = 0;
 static mut NUM_BYTES : u64 = 0;
 
+// Any data from `stdin` is passed to `stdout`.
 fn main() {
     let stdin = stdin();
     let stdout = io::stdout();
@@ -46,6 +55,10 @@ fn render(started : Instant, num_lines : u64, num_bytes : u64) {
     let kb = num_bytes / 1024;
     let kb_per_sec : f64 = kb as f64 / 1024.0 / seconds;
     let lines_per_sec : f64 = num_lines as f64 / seconds;
-    eprint!("\x1B[1G\x1B[2K {:.1} sec | {} kb [ {:.1} kb/sec ] | {} lines [ {:.0} lines/sec ]",
-              seconds, kb, kb_per_sec, num_lines, lines_per_sec);
+    let mut tty = OpenOptions::new().write(true).append(true).open("/dev/tty").unwrap();
+    tty.write_all(
+        format!(
+            "\x1B[1G\x1B[2K {:.1} sec | {} kb [ {:.1} kb/sec ] | {} lines [ {:.0} lines/sec ]",
+              seconds, kb, kb_per_sec, num_lines, lines_per_sec).as_bytes()
+        ) .unwrap();
 }

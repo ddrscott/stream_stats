@@ -73,3 +73,10 @@ time ./read_line < /tmp/lines_5m.csv > /dev/null
 # => num_lines: 5000000, num_bytes: 1409473763
 # => 0.48s user 0.32s system 99% cpu 0.800 total
 ```
+
+## Rust `stream_stats`
+```sh
+time ./target/release/stream_stats < /tmp/lines_5m.csv > /dev/null
+# =>  0.8 sec | 1376439 kb [ 1704.7 kb/sec ] | 5000000 lines [ 6341091 lines/sec ]
+# => 0.47s user 0.32s system 99% cpu 0.794 total
+```

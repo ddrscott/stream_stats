@@ -1,21 +1,14 @@
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, stdin, Write};
 use std::string::{String};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::thread::{self, sleep};
 
 static READ_BUF_SIZE : usize = 1024 * 1024;
 static UPDATE_INTERVAL_MS : u64 = 500;
-
-// Using globals for performance reasons.
-// We know we're updating in the `while` loop and the thread is occationally
-// rendering info back to terminal.
-//
-// Adding atomic updates or mutex is too much
-// overhead for a comparitively small amount of concurrent access against these
-// variables.
-static mut NUM_LINES : u64 = 0;
-static mut NUM_BYTES : u64 = 0;
+static OUTPUT: &'static str = "/dev/tty";
 
 // Any data from `stdin` is passed to `stdout`.
 fn main() {
@@ -25,40 +18,50 @@ fn main() {
     let mut writer = BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 
-    let started : Instant = Instant::now();
+    let num_lines = Arc::new(AtomicUsize::new(0));
+    let num_bytes = Arc::new(AtomicUsize::new(0));
 
-    thread::spawn(move || {
-        loop {
-            sleep(Duration::from_millis(UPDATE_INTERVAL_MS));
-            unsafe { render(started, NUM_LINES, NUM_BYTES) }
-        }
-    });
+    let started : Instant = Instant::now();
+    let output = Arc::new(Mutex::new(OpenOptions::new().write(true).append(true).open(OUTPUT).unwrap()));
+
+    {
+        let (num_lines, num_bytes, output) = (num_lines.clone(), num_bytes.clone(), output.clone());
+        thread::spawn(move || {
+            loop {
+                sleep(Duration::from_millis(UPDATE_INTERVAL_MS));
+                render(&mut output.lock().unwrap(), &started, num_lines.load(Ordering::Relaxed), num_bytes.load(Ordering::Relaxed));
+            }
+        });
+    }
 
     while reader.read_line(&mut buffer).unwrap() > 0 {
         writer.write(buffer.as_bytes()).unwrap();
-        unsafe {
-            NUM_LINES += 1;
-            NUM_BYTES += buffer.len() as u64;
-        }
+        num_lines.fetch_add(1, Ordering::Relaxed);
+        num_bytes.fetch_add(buffer.len(), Ordering::Relaxed);
         buffer.clear();
     }
-    unsafe { render(started, NUM_LINES, NUM_BYTES) }
-    eprint!("\n")
+    render(&mut output.lock().unwrap(), &started, num_lines.load(Ordering::Relaxed), num_bytes.load(Ordering::Relaxed));
+    output.lock().unwrap().write(b"\n").unwrap();
 }
 
-fn render(started : Instant, num_lines : u64, num_bytes : u64) {
+fn render(output: &mut File, started: &Instant, num_lines: usize, num_bytes: usize) {
     let elapsed = started.elapsed();
-    let seconds = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;
-    if seconds == 0.0 {
+    // let seconds : f64 = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;
+    let millis : f64 = (elapsed.as_secs() * 1000 + (elapsed.subsec_nanos() as u64 / 1000000 as u64)) as f64;
+    if millis == 0.0 {
         return;
     }
-    let kb = num_bytes / 1024;
-    let kb_per_sec : f64 = kb as f64 / 1024.0 / seconds;
-    let lines_per_sec : f64 = num_lines as f64 / seconds;
-    let mut tty = OpenOptions::new().write(true).append(true).open("/dev/tty").unwrap();
-    tty.write_all(
+    let kb = num_bytes / 1024 as usize;
+    let kb_per_millis = kb / (millis as usize);
+    let lines_per_millis = num_lines / millis as usize;
+    output.write_all(
         format!(
-            "\x1B[1G\x1B[2K {:.1} sec | {} kb [ {:.1} kb/sec ] | {} lines [ {:.0} lines/sec ]",
-              seconds, kb, kb_per_sec, num_lines, lines_per_sec).as_bytes()
+            "\x1B[1G\x1B[2K {:.1} sec | {} kb [ {:.1} kb/s ] | {} lines [ {:.0} ln/s ]",
+            millis as f64 / 1000.0 as f64,
+            kb,
+            kb_per_millis as f64 / 1000.0 as f64,
+            num_lines,
+            lines_per_millis as f64 / 1000.0 as f64
+            ).as_bytes()
         ) .unwrap();
 }

@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, stdin, Write};
 use std::string::{String};
@@ -11,9 +12,17 @@ static UPDATE_INTERVAL_MS : u64 = 100;
 static OUTPUT: &'static str = "/dev/tty";
 
 fn main() {
-    let stdin = stdin();
+    // Thanks: https://www.reddit.com/r/rust/comments/32rjdd/reading_from_a_file_or_stdin_based_on_command/
+    let path = env::args()
+        .nth(1)
+        .unwrap_or(String::from("-"));
+    let input: Box<io::Read> = match path.as_ref() {
+        "-" => Box::new(stdin()),
+        _   => Box::new(File::open(path).unwrap())
+    };
+
     let stdout = io::stdout();
-    let mut reader = BufReader::with_capacity(READ_BUF_SIZE, stdin.lock());
+    let mut reader = BufReader::with_capacity(READ_BUF_SIZE, input);
     let mut writer = BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 

@@ -28,7 +28,7 @@ time ./veedrac /tmp/lines_5m.csv > /dev/null
 
 ## `wc -l` - Word Count
 ```sh
-time wc < /tmp/lines_5m.csv
+time wc -l < /tmp/lines_5m.csv
 # => 5000000
 # => 0.86s user 0.26s system 99% cpu 1.121 total
 ```

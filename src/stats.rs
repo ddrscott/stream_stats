@@ -19,7 +19,7 @@ impl Stats {
         }
     }
 
-    pub fn add(&self, buffer : &String) {
+    pub fn add(&self, buffer : &Vec<u8>) {
         self.lines.fetch_add(1, Ordering::Relaxed);
         self.bytes.fetch_add(buffer.len(), Ordering::Relaxed);
     }

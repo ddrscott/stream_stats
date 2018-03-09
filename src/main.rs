@@ -30,10 +30,10 @@ fn main() {
 
     let mut reader = BufReader::with_capacity(READ_BUF_SIZE, file_or_stdin());
     let mut writer = BufWriter::new(io::stdout());
-    let mut buffer = String::new();
+    let mut buffer = vec![];
 
-    while reader.read_line(&mut buffer).unwrap() > 0 {
-        writer.write(buffer.as_bytes()).unwrap();
+    while reader.read_until(b'\n', &mut buffer).unwrap() > 0 {
+        writer.write(&buffer).unwrap();
         stats.add(&buffer);
         buffer.clear();
     }

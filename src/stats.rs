@@ -4,8 +4,8 @@ use std::time::Instant;
 
 pub struct Stats {
     started : Instant,
-    pub lines : AtomicUsize,
-    pub bytes : AtomicUsize,
+    lines : AtomicUsize,
+    bytes : AtomicUsize,
 }
 
 impl Stats {
@@ -15,6 +15,11 @@ impl Stats {
             lines : AtomicUsize::new(0),
             bytes : AtomicUsize::new(0),
         }
+    }
+
+    pub fn add(&self, buffer : &String) {
+        self.lines.fetch_add(1, Ordering::Relaxed);
+        self.bytes.fetch_add(buffer.len(), Ordering::Relaxed);
     }
 }
 

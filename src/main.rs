@@ -3,7 +3,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, stdin, Write};
 use std::string::{String};
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{Ordering};
 use std::time::{Duration};
 use std::thread::{self, sleep};
 
@@ -36,7 +35,6 @@ fn main() {
     thread::spawn(move || {
         loop {
             sleep(Duration::from_millis(UPDATE_INTERVAL_MS));
-            // render(&mut output_clone.lock().unwrap(), &stats_clone);
             write!(&mut output_clone.lock().unwrap(), "{}", &stats_clone)
                 .expect("Could not write to output!");
         }
@@ -44,8 +42,7 @@ fn main() {
 
     while reader.read_line(&mut buffer).unwrap() > 0 {
         writer.write(buffer.as_bytes()).unwrap();
-        stats.lines.fetch_add(1, Ordering::Relaxed);
-        stats.bytes.fetch_add(buffer.len(), Ordering::Relaxed);
+        stats.add(&buffer);
         buffer.clear();
     }
     writeln!(output.lock().unwrap(), "{}", &stats)

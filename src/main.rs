@@ -14,8 +14,14 @@ static UPDATE_INTERVAL_MS : u64 = 100;
 static OUTPUT_TTY : &str = "/dev/tty";
 
 fn main() {
-    let stats = Arc::new(Stats::new());
-    let tty = Arc::new(Mutex::new(OpenOptions::new().write(true).append(true).open(OUTPUT_TTY).unwrap()));
+    let stats = Stats::new();
+    let stats = Arc::new(stats);
+    let tty = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(OUTPUT_TTY)
+        .expect("Cannot open tty for writing!");
+    let tty = Arc::new(Mutex::new(tty));
 
     // Setup a thread to render stats periodically.
     let stats_clone = stats.clone();

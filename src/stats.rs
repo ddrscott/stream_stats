@@ -2,6 +2,8 @@ use std::{fmt};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 
+static CLEAR_LINE : &str = "\x1B[1G\x1B[2K";
+
 pub struct Stats {
     started : Instant,
     lines : AtomicUsize,
@@ -37,7 +39,7 @@ impl fmt::Display for Stats {
         let kb = bytes as f64 / 1024 as f64;
         let kb_per_sec = kb / seconds;
         let lines_per_sec = lines as f64 / seconds;
-        write!(f, "\x1B[1G\x1B[2K {:.1} sec | {:.0} kb [ {:.1}/s ] | {} lines [ {:.0}/s ]",
-               seconds, kb, kb_per_sec, lines, lines_per_sec)
+        write!(f, "{} {:.1} sec | {:.0} kb [ {:.1}/s ] | {} lines [ {:.0}/s ]",
+               CLEAR_LINE, seconds, kb, kb_per_sec, lines, lines_per_sec)
     }
 }

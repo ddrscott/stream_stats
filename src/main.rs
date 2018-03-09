@@ -9,7 +9,7 @@ use std::thread::{self, sleep};
 
 static READ_BUF_SIZE : usize = 1024 * 1024;
 static UPDATE_INTERVAL_MS : u64 = 100;
-static OUTPUT: &'static str = "/dev/tty";
+static OUTPUT : &str = "/dev/tty";
 
 fn main() {
     // Thanks: https://www.reddit.com/r/rust/comments/32rjdd/reading_from_a_file_or_stdin_based_on_command/

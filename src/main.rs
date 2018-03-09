@@ -14,15 +14,8 @@ static UPDATE_INTERVAL_MS : u64 = 100;
 static OUTPUT : &str = "/dev/tty";
 
 fn main() {
-    // Thanks: https://www.reddit.com/r/rust/comments/32rjdd/reading_from_a_file_or_stdin_based_on_command/
-    let path = env::args().nth(1).unwrap_or(String::from("-"));
-    let input: Box<io::Read> = match path.as_ref() {
-        "-" => Box::new(stdin()),
-        _   => Box::new(File::open(path).unwrap())
-    };
-
     let stdout = io::stdout();
-    let mut reader = BufReader::with_capacity(READ_BUF_SIZE, input);
+    let mut reader = BufReader::with_capacity(READ_BUF_SIZE, file_or_stdin());
     let mut writer = BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 
@@ -47,4 +40,13 @@ fn main() {
     }
     writeln!(output.lock().unwrap(), "{}", &stats)
         .expect("Could not write to output!");
+}
+
+/// Thanks: https://www.reddit.com/r/rust/comments/32rjdd/reading_from_a_file_or_stdin_based_on_command/
+fn file_or_stdin() -> Box<io::Read> {
+    let path = env::args().nth(1).unwrap_or(String::from("-"));
+    match path.as_ref() {
+        "-" => Box::new(stdin()),
+        _   => Box::new(File::open(path).unwrap())
+    }
 }

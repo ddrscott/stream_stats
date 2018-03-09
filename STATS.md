@@ -1,4 +1,8 @@
+Code for these various attempts in the branch `various_attempts`
+
 # Cat
+
+Baseline timing for reading input and writing to stdout.
 
 ## `cat`
 
@@ -25,6 +29,8 @@ time ./veedrac /tmp/lines_5m.csv > /dev/null
 ```
 
 # Line Count
+
+Timings for performing line counts.
 
 ## `wc -l` - Word Count
 ```sh
@@ -74,9 +80,18 @@ time ./read_line < /tmp/lines_5m.csv > /dev/null
 # => 0.48s user 0.32s system 99% cpu 0.800 total
 ```
 
-## Rust `stream_stats`
+## Rust `stream_stats` with static shared memory
+Commit: `84d83e4`
 ```sh
 time ./target/release/stream_stats < /tmp/lines_5m.csv > /dev/null
 # =>  0.8 sec | 1376439 kb [ 1704.7 kb/sec ] | 5000000 lines [ 6341091 lines/sec ]
 # => 0.47s user 0.32s system 99% cpu 0.794 total
+```
+
+## Rust `stream_stats` with AtomicUsize
+Commit: `b83183d`
+```sh
+time ./target/release/stream_stats < /tmp/lines_5m.csv > /dev/null
+# => 0.8 sec | 1376439 kb [ 1623148.5/s ] | 5000000 lines [ 5896187/s ]
+# => 0.52s user 0.33s system 99% cpu 0.854 total
 ```

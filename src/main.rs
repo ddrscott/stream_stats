@@ -43,6 +43,7 @@ fn main() {
         stats.add(&buffer);
         buffer.clear();
     }
+    writer.flush().unwrap();
 
     // write file stats
     writeln!(tty.lock().unwrap(), "{}", &stats)
